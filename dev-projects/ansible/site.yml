@@ -1,0 +1,63 @@
+---
+- name: Configure DevOps Web Server
+  hosts: webservers
+  become: true
+
+  tasks:
+
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - curl
+        state: present
+
+    - name: Start Docker service
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create website directory
+      ansible.builtin.file:
+        path: /opt/devops-website
+        state: directory
+        mode: "0755"
+
+    - name: Create website index page
+      ansible.builtin.copy:
+        dest: /opt/devops-website/index.html
+        mode: "0644"
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>DevOps Project</title>
+          </head>
+          <body>
+              <h1>DevOps Automation Project</h1>
+              <h2>Terraform + Ansible + Docker + AWS</h2>
+              <p>Server configured successfully using Ansible.</p>
+          </body>
+          </html>
+
+    - name: Pull Nginx Docker image
+      community.docker.docker_image:
+        name: nginx:latest
+        source: pull
+
+    - name: Run Nginx container
+      community.docker.docker_container:
+        name: devops-nginx
+        image: nginx:latest
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "80:80"
+        volumes:
+          - /opt/devops-website:/usr/share/nginx/html:ro

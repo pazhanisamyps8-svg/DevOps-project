@@ -1,0 +1,5 @@
+[webservers]
+web01 ansible_host=34.216.142.134 ansible_user=ubuntu ansible_ssh_private_key_file=/home/pazhani/.ssh/devops-project
+
+[monitoring]
+monitor01 ansible_host=44.252.32.92 ansible_user=ubuntu ansible_ssh_private_key_file=/home/pazhani/.ssh/devops-project

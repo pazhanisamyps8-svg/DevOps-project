@@ -1,0 +1,41 @@
+---
+- name: Install Prometheus
+  hosts: monitoring
+  become: true
+
+  tasks:
+
+    - name: Create Prometheus user
+      ansible.builtin.user:
+        name: prometheus
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+
+    - name: Install Prometheus package
+      ansible.builtin.apt:
+        name: prometheus
+        state: present
+        update_cache: true
+
+    - name: Configure Prometheus
+      ansible.builtin.copy:
+        src: prometheus_config.yml
+        dest: /etc/prometheus/prometheus.yml
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Prometheus
+
+    - name: Enable and start Prometheus
+      ansible.builtin.service:
+        name: prometheus
+        state: started
+        enabled: true
+
+  handlers:
+
+    - name: Restart Prometheus
+      ansible.builtin.service:
+        name: prometheus
+        state: restarted
