@@ -1,0 +1,47 @@
+
+---
+- name: Create Apache web server
+  hosts: all
+  remote_user: root
+  become: yes
+
+  tasks:
+
+    - name: Install Apache web server
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    - name: Start and enable Apache service
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Allow HTTP port 80 in firewall
+      ansible.posix.firewalld:
+        port: 80/tcp
+        permanent: yes
+        immediate: yes
+        state: enabled
+
+    - name: Allow Apache HTTP service in firewall
+      ansible.posix.firewalld:
+        service: http
+        permanent: yes
+        immediate: yes
+        state: enabled
+
+    - name: Copy HTML website template
+      ansible.builtin.copy:
+        src: /web/sample-site/
+        dest: /var/www/html/
+        remote_src: yes
+        mode: '0777'
+
+    - name: Ensure firewalld is running
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: yes
+
