@@ -1,0 +1,50 @@
+---
+- name: Configure LVM Storage
+  hosts: all
+  become: true
+  vars:
+    storage_disk: "/dev/sdb"
+    vg_name: "vg_data"
+    lv_name: "lv_storage"
+    lv_size: "10g"                
+    filesystem_type: "xfs"        
+    mount_point: "/mnt/data"
+
+  tasks:
+    - name: Create primary partition with LVM flag
+      community.general.parted:
+        device: "{{ storage_disk }}"
+        number: 1
+        flags: [ lvm ]
+        state: present
+        part_end: "{{ lv_size }}"
+
+    - name: Create Volume Group (VG)
+      community.general.lvg:
+        vg: "{{ vg_name }}"
+        pvs: "{{ storage_disk }}1"
+
+    - name: Create Logical Volume (LV)
+      community.general.lvol:
+        vg: "{{ vg_name }}"
+        lv: "{{ lv_name }}"
+        size: "{{ lv_size }}"
+
+    - name: Format Logical Volume with filesystem
+      community.general.filesystem:
+        fstype: "{{ filesystem_type }}"
+        dev: "/dev/{{ vg_name }}/{{ lv_name }}"
+
+    - name: Ensure mount directory exists
+      ansible.builtin.file:
+        path: "{{ mount_point }}"
+        state: directory
+        mode: '0755'
+
+    - name: Mount Logical Volume and add to fstab
+      ansible.posix.mount:
+        path: "{{ mount_point }}"
+        src: "/dev/{{ vg_name }}/{{ lv_name }}"
+        fstype: "{{ filesystem_type }}"
+        opts: defaults
+        state: mounted

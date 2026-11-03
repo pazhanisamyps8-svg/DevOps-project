@@ -1,0 +1,42 @@
+
+---
+- name: Create Linux users with temporary passwords
+  hosts: all
+  remote_user: root
+  become: yes
+
+  vars:
+    temporary_password: "Welcome@123"
+
+  tasks:
+    - name: Create new group
+      ansible.builtin.group:
+        name: test
+        state: present
+
+    - name: Create local user accounts
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+        shell: /bin/bash
+        group: test
+        password: "{{ temporary_password | password_hash('sha512') }}"
+        update_password: always
+        create_home: yes
+      loop:
+        - maheshwari
+        - banumathi
+        - swetha
+        - balamurugan
+        - mahesh
+
+    - name: Force users to change password at first login
+      ansible.builtin.command:
+        cmd: "chage -d 0 {{ item }}"
+      loop:
+        - maheshwari
+        - banumathi
+        - swetha
+        - balamurugan
+        - mahesh
+
